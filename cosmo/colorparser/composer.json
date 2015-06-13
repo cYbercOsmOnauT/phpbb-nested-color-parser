@@ -28,7 +28,7 @@
     "version-check": {
       "host": "www.web-coding.eu",
       "directory": "/phpbb-extensions",
-      "file": "nested-color-parser.json"
+      "filename": "nested-color-parser.json"
     }
   }
 }
