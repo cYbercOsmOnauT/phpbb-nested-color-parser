@@ -1,5 +1,5 @@
 # Nested Color Parser Extension for phpBB
-phpBB 3.1 does not allow nested color tags. For example `[color=#ff0000]Hello [color=#00ff00]there[/color]![/color]` does not work. The first opener and the first closing bbcode are taken coloring everything from Hello to there in red leaving the second `[color=#00ff00]` and the most right `[/color]` unparsed.
+phpBB 3.1 does not allow nested color tags. For example `[color=#ff0000]Hello [color=#00ff00]there[/color]![/color]` does not work. The first opener and the first closing bbcode are taken coloring everything from *Hello* to *there* in red leaving the second `[color=#00ff00]` and the most right `[/color]` unparsed.
 
 
 ### Some remarks for other coders
