@@ -1,16 +1,18 @@
 {
-  "name": "cosmo/color_parser",
+  "name": "cosmo/colorparser",
   "type": "phpbb-extension",
   "description": "Parse nested color tags",
   "homepage": "http://www.web-coding.eu",
   "version": "1.0.0",
   "time": "2015-06-09",
   "license": "GPL-2.0",
-  "authors": [{
-    "name": "cYbercOsmOnauT",
-    "homepage": "http://www.web-coding.eu",
-    "role": "Developer"
-  }],
+  "authors": [
+    {
+      "name": "cYbercOsmOnauT",
+      "homepage": "http://www.web-coding.eu",
+      "role": "Developer"
+    }
+  ],
   "require": {
     "php": ">=5.3.3",
     "composer/installers": "~1.0"
@@ -22,6 +24,11 @@
     "display-name": "Nested Color Parser",
     "soft-require": {
       "phpbb/phpbb": ">=3.1.0-RC3,<3.2.*@dev"
+    },
+    "version-check": {
+      "host": "www.web-coding.eu",
+      "directory": "/phpbb-extensions",
+      "file": "nested-color-parser.json"
     }
   }
 }

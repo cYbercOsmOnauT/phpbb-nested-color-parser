@@ -8,7 +8,7 @@
  */
 
 
-namespace cosmo\color_parser\event;
+namespace cosmo\colorparser\event;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -28,7 +28,7 @@ class parser implements EventSubscriberInterface {
 
 	public function initialize_fp_color ($event) {
 		$new_color = $event['bbcodes'];
-		$new_color['color'] = array('bbcode_id' => 6,	'regexp' => array('!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\](.+)\[/color\]!uise' => "cosmo\\color_parser\\event\\parser::bbcode_first_pass_colors('\$0', \$this)"));
+		$new_color['color'] = array('bbcode_id' => 6,	'regexp' => array('!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\](.+)\[/color\]!uise' => "cosmo\\colorparser\\event\\parser::bbcode_first_pass_colors('\$0', \$this)"));
 
 		$event['bbcodes'] = $new_color;
 	}
@@ -37,8 +37,8 @@ class parser implements EventSubscriberInterface {
 		$tmp = $event['bbcode_cache'];
 		$tmp[6] = array(
 			'preg' => array(
-				'/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]((?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]).)?/ise'	=> "cosmo\\color_parser\\event\\parser::bbcode_second_pass_color_open('\$1', '\$2', \$this, \$bbcode_id)",
-				'/\[\/color:$uid\]/ie' => "cosmo\\color_parser\\event\\parser::bbcode_second_pass_color_close(\$this, \$bbcode_id)"
+				'/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]((?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]).)?/ise'	=> "cosmo\\colorparser\\event\\parser::bbcode_second_pass_color_open('\$1', '\$2', \$this, \$bbcode_id)",
+				'/\[\/color:$uid\]/ie' => "cosmo\\colorparser\\event\\parser::bbcode_second_pass_color_close(\$this, \$bbcode_id)"
 			)
 		);
 		$event['bbcode_cache'] = $tmp;
@@ -81,7 +81,7 @@ class parser implements EventSubscriberInterface {
 		$text = str_replace('\"', '"', $text);
 
 		// remove newline at the beginning
-		if ($text == "\n")
+		if ($text === "\n")
 		{
 			$text = '';
 		}
