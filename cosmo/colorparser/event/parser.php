@@ -1,9 +1,9 @@
 <?php
 /**
  *
- * @author Tekin Birdüzen <t.birduezen@web-coding.eu>
- * @since 09.06.15
- * @version 1.0.0
+ * @author    Tekin Birdüzen <t.birduezen@web-coding.eu>
+ * @since     09.06.15
+ * @version   1.1.0
  * @copyright Tekin Birdüzen
  */
 
@@ -16,19 +16,23 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * Event listener
  */
 class parser implements EventSubscriberInterface {
-	private static $color_open;
-	private static $color_close;
+	private $color_open;
+	private $color_close;
+	private $bbcode;
+	private $bbcode_id;
 
 	public static function getSubscribedEvents() {
 		return array(
-			'core.modify_bbcode_init'  => 'initialize_fp_color',
-			'core.bbcode_cache_init_end' => 'initialize_sp_color'
+			'core.modify_bbcode_init'              => 'initialize_fp_color',
+			'core.bbcode_cache_init_end'           => 'initialize_sp_color',
+			'core.validate_bbcode_by_extension'    => 'bbcode_first_pass_colors',
+			'core.bbcode_second_pass_by_extension' => 'bbcode_second_pass_color'
 		);
 	}
 
-	public function initialize_fp_color ($event) {
+	public function initialize_fp_color($event) {
 		$new_color = $event['bbcodes'];
-		$new_color['color'] = array('bbcode_id' => 6,	'regexp' => array('!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\](.+)\[/color\]!uise' => "cosmo\\colorparser\\event\\parser::bbcode_first_pass_colors('\$0', \$this)"));
+		$new_color['color'] = array('bbcode_id' => 6, 'regexp' => array('!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\](.+)\[/color\]!uise' => "\$this->validate_bbcode_by_extension('\$0', \$this)"));
 
 		$event['bbcodes'] = $new_color;
 	}
@@ -37,8 +41,8 @@ class parser implements EventSubscriberInterface {
 		$tmp = $event['bbcode_cache'];
 		$tmp[6] = array(
 			'preg' => array(
-				'/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]((?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]).)?/ise'	=> "cosmo\\colorparser\\event\\parser::bbcode_second_pass_color_open('\$1', '\$2', \$this, \$bbcode_id)",
-				'/\[\/color:$uid\]/ie' => "cosmo\\colorparser\\event\\parser::bbcode_second_pass_color_close(\$this, \$bbcode_id)"
+				'/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]((?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+):$uid\]).)?/ise' => "\$this->bbcode_second_pass_by_extension('open', \$this,  \$bbcode_id, '\$1', '\$2')",
+				'/\[\/color:$uid\]/ie'                                                                                                => "\$this->bbcode_second_pass_by_extension('close', \$this, \$bbcode_id)"
 			)
 		);
 		$event['bbcode_cache'] = $tmp;
@@ -47,63 +51,80 @@ class parser implements EventSubscriberInterface {
 	/**
 	 * Firstpass color bbcode
 	 */
-	public static function bbcode_first_pass_colors($in, $that)
-	{
+	public function bbcode_first_pass_colors($event) {
+		$in = $event['params_array'][0];
+		$this->bbcode = $event['params_array'][1];
 		$in = str_replace("\r\n", "\n", str_replace('\"', '"', trim($in)));
 
-		if (!$in)
-		{
-			return '';
+		if (!$in) {
+			$event['return'] = '';
+			return;
 		}
 
 		$out = $in;
 		do {
 			$in = $out;
-			$out = preg_replace('/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\]((?:.(?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\]))*?)\[\/color\]/is', '[color=$1:'.$that->bbcode_uid.']$2[/color:'.$that->bbcode_uid.']', $in);
-		} while($out !== $in);
+			$out = preg_replace('/\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\]((?:.(?!\[color=(#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z\-]+)\]))*?)\[\/color\]/is', '[color=$1:' . $this->bbcode->bbcode_uid . ']$2[/color:' . $this->bbcode->bbcode_uid . ']', $in);
+		} while ($out !== $in);
 
-		return $out;
+		$event['return'] = $out;
 	}
 
 	/**
 	 * Secondpass color bbcode
 	 */
 
-	public static function bbcode_second_pass_color_open($color, $text, $that, $bbcode_id) {
+	public function bbcode_second_pass_color($event) {
+		$mode = $event['params_array'][0];
+		$this->bbcode = $event['params_array'][1];
+		$this->bbcode_id = $event['params_array'][2];
+
+		// open or close?
+		if ('open' === $mode) {
+			// These two variables are not really needed
+			// It's just to make clear what they are for
+			$color = $event['params_array'][3];
+			$text = $event['params_array'][4];
+			$event['return'] = $this->bbcode_second_pass_color_open($color, $text);
+		}
+		else {
+			$event['return'] = $this->bbcode_second_pass_color_close();
+		}
+	}
+
+	private function bbcode_second_pass_color_open($color, $text) {
 		// Already got the part?
-		if (!is_string(self::$color_open)) {
-			self::get_tpl_parts($that, $bbcode_id);
+		if (!is_string($this->color_open)) {
+			$this->get_tpl_parts();
 		}
 
 		// when using the /e modifier, preg_replace slashes double-quotes but does not
 		// seem to slash anything else
-		$color = str_replace('\"', '"', $color);
 		$text = str_replace('\"', '"', $text);
 
 		// remove newline at the beginning
-		if ($text === "\n")
-		{
+		if ("\n" === $text) {
 			$text = '';
 		}
 
-		$text = str_replace('$1', $color, self::$color_open) . $text;
+		$text = str_replace('$1', $color, $this->color_open) . $text;
 
 		return $text;
 	}
 
-	public static function bbcode_second_pass_color_close($that, $bbcode_id) {
+	private function bbcode_second_pass_color_close() {
 		// Already got the part?
-		if (!is_string(self::$color_close)) {
-			self::get_tpl_parts($that, $bbcode_id);
+		if (!is_string($this->color_close)) {
+			$this->get_tpl_parts();
 		}
 
-		return self::$color_close;
+		return $this->color_close;
 	}
 
-	public static function get_tpl_parts($that, $bbcode_id) {
-		$tpl = $that->bbcode_tpl('color', $bbcode_id);
+	private function get_tpl_parts() {
+		$tpl = $this->bbcode->bbcode_tpl('color', $this->bbcode_id);
 		$strpos = strpos($tpl, '$2');
-		self::$color_open = substr($tpl, 0, $strpos);
-		self::$color_close = substr($tpl, $strpos+2);
+		$this->color_open = substr($tpl, 0, $strpos);
+		$this->color_close = substr($tpl, $strpos + 2);
 	}
 }
