@@ -48,8 +48,10 @@ before_install:
   - sudo rm -rf phpbb-ext-acme-demo
 
 install:
-  - composer install --no-interaction --prefer-source
   - composer self-update
+  - cd cosmo/colorparser
+  - composer install --no-interaction --prefer-source
+  - cd ../../
   - travis/prepare-phpbb.sh $EXTNAME $PHPBB_BRANCH
   - cd ../../phpBB3
   - travis/prepare-extension.sh $EXTNAME $PHPBB_BRANCH
