@@ -53,7 +53,9 @@ install:
   - cd ../../
   - travis/prepare-phpbb.sh $EXTNAME $PHPBB_BRANCH
   - cd ../../phpBB3
-  - travis/prepare-extension.sh $EXTNAME $PHPBB_BRANCH
+  - mkdir --parents phpBB/ext/
+  - cp -R ../tmp/* phpBB/ext/
+  - cp -R travis phpBB/ext/$EXTNAME/
   - travis/setup-phpbb.sh $DB $TRAVIS_PHP_VERSION
 
 before_script:
